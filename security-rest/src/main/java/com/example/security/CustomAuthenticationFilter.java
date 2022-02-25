@@ -51,6 +51,7 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 
         AuthenticationResponse authenticationResponse = AuthenticationResponse.builder()
                 .accessToken(accessToken)
+                .tokenType("Bearer")
                 .build();
         response.getWriter().write(JsonParserUtils.toJson(authenticationResponse));
     }

@@ -2,18 +2,22 @@ package com.example.model.auth;
 
 import lombok.AccessLevel;
 import lombok.Builder;
-import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-@Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class AuthenticationResponse {
 
     private String accessToken;
+    private String tokenType;
 
     @Builder
-    public AuthenticationResponse(String accessToken) {
+    public AuthenticationResponse(String accessToken, String tokenType) {
         this.accessToken = accessToken;
+        this.tokenType = tokenType;
+    }
+
+    public String getToken() {
+        return tokenType + " " + accessToken;
     }
 
 }

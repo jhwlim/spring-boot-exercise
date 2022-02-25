@@ -53,6 +53,7 @@ class AuthenticationTest {
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("access_token").hasJsonPath())
+                .andExpect(jsonPath("token_type").value("Bearer"))
                 .andReturn();
         AuthJwt jwt = getJwt(result);
 
@@ -64,8 +65,7 @@ class AuthenticationTest {
     private AuthJwt getJwt(MvcResult result) throws UnsupportedEncodingException {
         MockHttpServletResponse response = result.getResponse();
         AuthenticationResponse body = JsonParserUtils.toObject(response.getContentAsString(), AuthenticationResponse.class);
-        String encodedJwt = body.getAccessToken();
-        return jwtProvider.decode(encodedJwt);
+        return jwtProvider.decode(body.getToken());
     }
 
     @DisplayName("로그인 - 실패 (닉네임이 존재하지 않는 경우)")

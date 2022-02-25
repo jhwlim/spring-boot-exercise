@@ -13,6 +13,7 @@ import java.security.Key;
 import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 @Slf4j
 @SpringBootTest
@@ -26,6 +27,10 @@ class AuthJwtProviderTest {
     Long validityTerm;
     Key key;
 
+    String subject = "test";
+    String auth = "ROLE_USER";
+    LocalDateTime expiredDtm = LocalDateTime.now().plusHours(1);
+
     @BeforeEach
     void setup() {
         key = Keys.hmacShaKeyFor(secretKey.getBytes());
@@ -35,9 +40,6 @@ class AuthJwtProviderTest {
     @DisplayName("JWT 생성하기")
     @Test
     void createJwt() {
-        String subject = "test";
-        String auth = "ROLE_USER";
-
         AuthJwt jwt = jwtProvider.createJwt(subject, auth);
 
         assertThat(jwt.getSubject()).isEqualTo(subject);
@@ -47,21 +49,63 @@ class AuthJwtProviderTest {
     @DisplayName("JWT 디코딩하기")
     @Test
     void decode() {
-        String subject = "test";
-        String auth = "ROLE_USER";
-        LocalDateTime expiredDtm = LocalDateTime.now().plusHours(1);
-        AuthJwt jwt = AuthJwt.builder()
-                .algorithm(AuthJwtProvider.SIGNATURE_ALGORITHM)
-                .subject(subject)
-                .auth(auth)
-                .expiredDtm(expiredDtm)
-                .key(key)
-                .build();
+        String token = getToken(createJwt(subject, auth, expiredDtm));
 
-        AuthJwt decodedJwt = jwtProvider.decode(jwt.encode());
+        AuthJwt decodedJwt = jwtProvider.decode(token);
 
         assertThat(decodedJwt.getSubject()).isEqualTo(subject);
         assertThat(decodedJwt.getAuth()).isEqualTo(auth);
         assertThat(decodedJwt.getExpiredDtm()).isEqualToIgnoringNanos(expiredDtm);
     }
+
+    @DisplayName("JWT 디코딩하기 - 실패 (토큰 타입이 일치하지 않는 경우)")
+    @Test
+    void decode_with_tokenTypeNotMatches() {
+        String token = "Bearerr " + createJwt(subject, auth, expiredDtm).encode();
+
+        assertThatExceptionOfType(CustomAuthenticationException.class).isThrownBy(() -> {
+            jwtProvider.decode(token);
+        });
+    }
+
+    @DisplayName("JWT 디코딩하기 - 실패 (키가 일치하지 않는 경우)")
+    @Test
+    void decode_with_keyNotMatches() {
+        Key wrongKey = Keys.hmacShaKeyFor((secretKey + "0123456789").getBytes());
+        String token = getToken(createJwt(wrongKey, subject, auth, expiredDtm));
+
+        assertThatExceptionOfType(CustomAuthenticationException.class).isThrownBy(() -> {
+            jwtProvider.decode(token);
+        });
+    }
+
+    @DisplayName("JWT 디코딩하기 - 실패 (유효시간이 만료된 경우)")
+    @Test
+    void decode_with_expiredOver() {
+        LocalDateTime pastExpiredDtm = LocalDateTime.now().minusHours(1L);
+        String token = getToken(createJwt(subject, auth, pastExpiredDtm));
+
+        assertThatExceptionOfType(CustomAuthenticationException.class).isThrownBy(() -> {
+            jwtProvider.decode(token);
+        });
+    }
+
+    private String getToken(AuthJwt jwt) {
+        return AuthJwtProvider.PREFIX_OF_AUTHORIZATION_HEADER + jwt.encode();
+    }
+
+    private AuthJwt createJwt(String subject, String auth, LocalDateTime expiredDtm) {
+        return createJwt(key, subject, auth, expiredDtm);
+    }
+
+    private AuthJwt createJwt(Key wrongKey, String subject, String auth, LocalDateTime expiredDtm) {
+        return AuthJwt.builder()
+                .algorithm(AuthJwtProvider.SIGNATURE_ALGORITHM)
+                .subject(subject)
+                .auth(auth)
+                .expiredDtm(expiredDtm)
+                .key(wrongKey)
+                .build();
+    }
+
 }
