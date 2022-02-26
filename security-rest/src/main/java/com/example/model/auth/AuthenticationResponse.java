@@ -16,8 +16,8 @@ public class AuthenticationResponse {
         this.tokenType = tokenType;
     }
 
-    public String getToken() {
-        return tokenType + " " + accessToken;
+    public String getAccessToken() {
+        return accessToken;
     }
 
 }

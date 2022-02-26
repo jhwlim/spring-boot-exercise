@@ -49,33 +49,23 @@ class AuthJwtProviderTest {
     @DisplayName("JWT 디코딩하기")
     @Test
     void decode() {
-        String token = getToken(createJwt(subject, auth, expiredDtm));
+        String encodedJwt = createJwt(subject, auth, expiredDtm).encode();
 
-        AuthJwt decodedJwt = jwtProvider.decode(token);
+        AuthJwt decodedJwt = jwtProvider.decode(encodedJwt);
 
         assertThat(decodedJwt.getSubject()).isEqualTo(subject);
         assertThat(decodedJwt.getAuth()).isEqualTo(auth);
         assertThat(decodedJwt.getExpiredDtm()).isEqualToIgnoringNanos(expiredDtm);
     }
 
-    @DisplayName("JWT 디코딩하기 - 실패 (토큰 타입이 일치하지 않는 경우)")
-    @Test
-    void decode_with_tokenTypeNotMatches() {
-        String token = "Bearerr " + createJwt(subject, auth, expiredDtm).encode();
-
-        assertThatExceptionOfType(CustomAuthenticationException.class).isThrownBy(() -> {
-            jwtProvider.decode(token);
-        });
-    }
-
     @DisplayName("JWT 디코딩하기 - 실패 (키가 일치하지 않는 경우)")
     @Test
     void decode_with_keyNotMatches() {
         Key wrongKey = Keys.hmacShaKeyFor((secretKey + "0123456789").getBytes());
-        String token = getToken(createJwt(wrongKey, subject, auth, expiredDtm));
+        String encodedJwt = createJwt(wrongKey, subject, auth, expiredDtm).encode();
 
         assertThatExceptionOfType(CustomAuthenticationException.class).isThrownBy(() -> {
-            jwtProvider.decode(token);
+            jwtProvider.decode(encodedJwt);
         });
     }
 
@@ -83,15 +73,11 @@ class AuthJwtProviderTest {
     @Test
     void decode_with_expiredOver() {
         LocalDateTime pastExpiredDtm = LocalDateTime.now().minusHours(1L);
-        String token = getToken(createJwt(subject, auth, pastExpiredDtm));
+        String encodedJwt = createJwt(subject, auth, pastExpiredDtm).encode();
 
         assertThatExceptionOfType(CustomAuthenticationException.class).isThrownBy(() -> {
-            jwtProvider.decode(token);
+            jwtProvider.decode(encodedJwt);
         });
-    }
-
-    private String getToken(AuthJwt jwt) {
-        return AuthJwtProvider.PREFIX_OF_AUTHORIZATION_HEADER + jwt.encode();
     }
 
     private AuthJwt createJwt(String subject, String auth, LocalDateTime expiredDtm) {

@@ -39,7 +39,7 @@ class HelloControllerTest {
                 .andExpect(content().string("Hello"));
     }
 
-    @DisplayName("Hello 출력하기 - 실패")
+    @DisplayName("Hello 출력하기 - 실패 (Authorization 헤더를 설정하지 않은 경우)")
     @Test
     void hello_with_noAuthorization() throws Exception {
         mockMvc.perform(get("/hello"))
