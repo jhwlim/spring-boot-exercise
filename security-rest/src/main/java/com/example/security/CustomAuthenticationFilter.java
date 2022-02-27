@@ -2,11 +2,12 @@ package com.example.security;
 
 import com.example.model.auth.AuthenticationRequest;
 import com.example.model.auth.AuthenticationResponse;
+import com.example.service.auth.AuthService;
 import com.example.utils.JsonParserUtils;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
@@ -21,10 +22,16 @@ import java.io.IOException;
 import java.util.stream.Collectors;
 
 @Slf4j
-@RequiredArgsConstructor
 public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
 
     private final AuthJwtProvider jwtProvider;
+    private final AuthService authService;
+
+    public CustomAuthenticationFilter(AuthenticationManager authenticationManager, AuthJwtProvider jwtProvider, AuthService authService) {
+        super(authenticationManager);
+        this.jwtProvider = jwtProvider;
+        this.authService = authService;
+    }
 
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException {
@@ -48,10 +55,12 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 
         AuthJwt jwt = jwtProvider.createJwt(authResult.getName(), authResult.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.joining(",")));
         String accessToken = jwt.encode();
+        String refreshToken = authService.createRefreshToken(authResult.getName());
 
         AuthenticationResponse authenticationResponse = AuthenticationResponse.builder()
                 .accessToken(accessToken)
                 .tokenType("Bearer")
+                .refreshToken(refreshToken)
                 .build();
         response.getWriter().write(JsonParserUtils.toJson(authenticationResponse));
     }

@@ -1,5 +1,7 @@
 package com.example.security;
 
+import com.example.domain.auth.RefreshToken;
+import com.example.domain.auth.RefreshTokenRepository;
 import com.example.model.auth.AuthenticationRequest;
 import com.example.model.auth.AuthenticationResponse;
 import com.example.utils.JsonParserUtils;
@@ -14,6 +16,7 @@ import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.UnsupportedEncodingException;
 import java.time.LocalDateTime;
@@ -34,9 +37,16 @@ class AuthenticationTest {
     @Autowired
     AuthJwtProvider jwtProvider;
 
+    @Autowired
+    RefreshTokenRepository refreshTokenRepository;
+
     @Value("${jwt.validity-term}")
     Long validityTerm;
 
+    @Value("${jwt.refresh-validity-term}")
+    Long refreshValidityTerm;
+
+    @Transactional
     @DisplayName("로그인 - 성공")
     @Test
     void authenticate() throws Exception {
@@ -54,18 +64,24 @@ class AuthenticationTest {
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("access_token").hasJsonPath())
                 .andExpect(jsonPath("token_type").value("Bearer"))
+                .andExpect(jsonPath("refresh_token").hasJsonPath())
                 .andReturn();
-        AuthJwt jwt = getJwt(result);
+        AuthenticationResponse response = getResponseBody(result);
+        AuthJwt jwt = jwtProvider.decode(response.getAccessToken());
+        LocalDateTime now = LocalDateTime.now();
 
         assertThat(jwt.getSubject()).isEqualTo(username);
         assertThat(jwt.getAuth()).isEqualTo("ROLE_USER");
-        assertThat(jwt.getExpiredDtm()).isAfter(LocalDateTime.now()).isBefore(LocalDateTime.now().plusSeconds(validityTerm));
+        assertThat(jwt.getExpiredDtm()).isBetween(now, now.plusSeconds(validityTerm));
+
+        RefreshToken refreshToken = refreshTokenRepository.findByAccountNickname(username).orElse(null);
+        assertThat(refreshToken.getValue()).isEqualTo(response.getRefreshToken());
+        assertThat(refreshToken.getExpiredDtm()).isBetween(now.plusSeconds(refreshValidityTerm - 3600), now.plusSeconds(refreshValidityTerm));
     }
 
-    private AuthJwt getJwt(MvcResult result) throws UnsupportedEncodingException {
+    private AuthenticationResponse getResponseBody(MvcResult result) throws UnsupportedEncodingException {
         MockHttpServletResponse response = result.getResponse();
-        AuthenticationResponse body = JsonParserUtils.toObject(response.getContentAsString(), AuthenticationResponse.class);
-        return jwtProvider.decode(body.getAccessToken());
+        return JsonParserUtils.toObject(response.getContentAsString(), AuthenticationResponse.class);
     }
 
     @DisplayName("로그인 - 실패 (닉네임이 존재하지 않는 경우)")

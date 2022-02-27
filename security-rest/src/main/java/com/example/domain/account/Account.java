@@ -10,10 +10,10 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-@Getter
-@NoArgsConstructor(access =  AccessLevel.PROTECTED)
 @Entity
 @Table(name = "accounts")
+@Getter
+@NoArgsConstructor(access =  AccessLevel.PROTECTED)
 public class Account {
 
     @Id

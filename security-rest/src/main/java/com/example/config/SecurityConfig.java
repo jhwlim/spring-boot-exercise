@@ -3,7 +3,7 @@ package com.example.config;
 import com.example.security.AuthJwtProvider;
 import com.example.security.CustomAuthenticationFilter;
 import com.example.security.CustomAuthorizationFilter;
-import lombok.RequiredArgsConstructor;
+import com.example.service.auth.AuthService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
@@ -16,10 +16,15 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 
 @EnableWebSecurity
-@RequiredArgsConstructor
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     private final AuthJwtProvider jwtProvider;
+    private final AuthService authService;
+
+    public SecurityConfig(AuthJwtProvider jwtProvider, AuthService authService) {
+        this.jwtProvider = jwtProvider;
+        this.authService = authService;
+    }
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
@@ -40,8 +45,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Bean
     public CustomAuthenticationFilter authenticationFilter() throws Exception {
-        CustomAuthenticationFilter filter = new CustomAuthenticationFilter(jwtProvider);
-        filter.setAuthenticationManager(authenticationManager());
+        CustomAuthenticationFilter filter = new CustomAuthenticationFilter(authenticationManager(), jwtProvider, authService);
         return filter;
     }
 

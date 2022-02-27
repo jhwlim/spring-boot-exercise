@@ -21,3 +21,4 @@ spring:
 jwt:
   secret-key: UHJhZXNlbnQgYSBhdWd1ZSBlZ2V0IGxlbyBwcmV0aXVtIHBlbGxlbnRlc3F1ZS4gVmVzdGlidWx1bSBuZXF1ZSB1cm5hLCB2b2x1dHBhdCBzZWQgYXVndWUgdXQsIGx1Y3R1cyBibGFuZGl0IGV4LiBJbnRlZ2VyIGdyYXZpZGEgbW9sbGlzIG1pIGlkIGZpbmlidXMuCg==
   validity-term: 3600 # 1시간
+  refresh-validity-term: 1209600 # 14일
