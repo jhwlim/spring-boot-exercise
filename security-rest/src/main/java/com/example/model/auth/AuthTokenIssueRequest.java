@@ -4,20 +4,22 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import lombok.*;
 
+import javax.validation.constraints.NotBlank;
+
 @ToString
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
-public class AuthenticationResponse {
+@JsonNaming(value = PropertyNamingStrategies.SnakeCaseStrategy.class)
+public class AuthTokenIssueRequest {
 
+    @NotBlank
     private String accessToken;
-    private String tokenType;
+    @NotBlank
     private String refreshToken;
 
     @Builder
-    public AuthenticationResponse(String accessToken, String tokenType, String refreshToken) {
+    public AuthTokenIssueRequest(String accessToken, String refreshToken) {
         this.accessToken = accessToken;
-        this.tokenType = tokenType;
         this.refreshToken = refreshToken;
     }
 

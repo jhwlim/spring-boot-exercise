@@ -40,6 +40,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .addFilterAt(authenticationFilter(), UsernamePasswordAuthenticationFilter.class)
 
                 .authorizeRequests()
+                .antMatchers(
+                        "/token"
+                ).permitAll()
                 .anyRequest().authenticated();
     }
 

@@ -32,4 +32,12 @@ public class RefreshToken {
         this.account = account;
     }
 
+    public boolean equalsValue(String value) {
+        return this.value.equals(value);
+    }
+
+    public boolean isExpired() {
+        return expiredDtm.isBefore(LocalDateTime.now());
+    }
+
 }
