@@ -4,6 +4,7 @@ import com.example.domain.auth.RefreshToken;
 import com.example.domain.auth.RefreshTokenRepository;
 import com.example.model.auth.AuthenticationRequest;
 import com.example.model.auth.AuthenticationResponse;
+import com.example.service.auth.AuthService;
 import com.example.utils.JsonParserUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.DisplayName;
@@ -39,6 +40,9 @@ class AuthenticationTest {
 
     @Autowired
     RefreshTokenRepository refreshTokenRepository;
+
+    @Autowired
+    AuthService authService;
 
     @Value("${jwt.validity-term}")
     Long validityTerm;
@@ -112,6 +116,24 @@ class AuthenticationTest {
                 .andDo(print())
                 .andExpect(status().isUnauthorized())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+    }
+
+    @Transactional
+    @DisplayName("로그아웃 - 성공")
+    @Test
+    void logout() throws Exception {
+        String nickname = "test";
+        String auth = "ROLE_USER";
+        String accessToken = jwtProvider.createJwt(nickname, auth).encode();
+        authService.createRefreshToken(nickname);
+        assertThat(refreshTokenRepository.findByAccountNickname(nickname).isPresent()).isTrue();
+
+        mockMvc.perform(post("/logout")
+                .header("Authorization", "Bearer " + accessToken))
+                .andDo(print())
+                .andExpect(status().isOk());
+
+        assertThat(refreshTokenRepository.findByAccountNickname(nickname).isEmpty()).isTrue();
     }
 
 }

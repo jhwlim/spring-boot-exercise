@@ -52,4 +52,12 @@ public class AuthService {
         }
     }
 
+    @Transactional
+    public void removeRefreshToken(String nickname) {
+        refreshTokenRepository.findByAccountNickname(nickname)
+                .ifPresent(savedRefreshToken -> {
+                    refreshTokenRepository.delete(savedRefreshToken);
+                });
+    }
+
 }
