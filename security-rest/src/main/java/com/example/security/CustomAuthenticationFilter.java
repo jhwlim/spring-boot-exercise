@@ -7,6 +7,7 @@ import com.example.utils.JsonParserUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -51,7 +52,7 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 
     @Override
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authResult) throws IOException, ServletException {
-        response.setContentType("application/json");
+        response.setContentType(MediaType.APPLICATION_JSON.toString());
 
         AuthJwt jwt = jwtProvider.createJwt(authResult.getName(), authResult.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.joining(",")));
         String accessToken = jwt.encode();
@@ -59,7 +60,6 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 
         AuthenticationResponse authenticationResponse = AuthenticationResponse.builder()
                 .accessToken(accessToken)
-                .tokenType("Bearer")
                 .refreshToken(refreshToken)
                 .build();
         response.getWriter().write(JsonParserUtils.toJson(authenticationResponse));
@@ -67,7 +67,7 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 
     @Override
     protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException failed) throws IOException, ServletException {
-        response.setContentType("application/json");
+        response.setContentType(MediaType.APPLICATION_JSON.toString());
         response.setStatus(HttpStatus.UNAUTHORIZED.value());
     }
 

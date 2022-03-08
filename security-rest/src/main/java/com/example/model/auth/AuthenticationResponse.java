@@ -10,14 +10,14 @@ import lombok.*;
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class AuthenticationResponse {
 
+    private final String tokenType = "Bearer";
+
     private String accessToken;
-    private String tokenType;
     private String refreshToken;
 
     @Builder
-    public AuthenticationResponse(String accessToken, String tokenType, String refreshToken) {
+    public AuthenticationResponse(String accessToken, String refreshToken) {
         this.accessToken = accessToken;
-        this.tokenType = tokenType;
         this.refreshToken = refreshToken;
     }
 

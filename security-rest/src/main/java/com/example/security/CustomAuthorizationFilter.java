@@ -2,6 +2,7 @@ package com.example.security;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;
@@ -65,7 +66,7 @@ public class CustomAuthorizationFilter extends BasicAuthenticationFilter {
     private UsernamePasswordAuthenticationToken createAuthenticationToken(AuthJwt jwt) {
         return new UsernamePasswordAuthenticationToken(
                 jwt.getSubject(),
-                "",
+                null,
                 Arrays.stream(jwt.getAuth().split(","))
                         .map(SimpleGrantedAuthority::new)
                         .collect(Collectors.toList())
@@ -74,7 +75,7 @@ public class CustomAuthorizationFilter extends BasicAuthenticationFilter {
 
     @Override
     protected void onUnsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException failed) throws IOException {
-        response.setContentType("application/json");
+        response.setContentType(MediaType.APPLICATION_JSON.toString());
         response.setStatus(HttpStatus.UNAUTHORIZED.value());
     }
 }

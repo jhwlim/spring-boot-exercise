@@ -4,10 +4,12 @@ import com.example.domain.account.Account;
 import com.example.domain.account.AccountRepository;
 import com.example.domain.auth.RefreshToken;
 import com.example.domain.auth.RefreshTokenRepository;
+import com.example.security.AuthJwt;
+import com.example.security.AuthJwtProperties;
+import com.example.security.AuthJwtProvider;
 import com.example.security.CustomAuthenticationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,9 +23,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class AuthService {
 
-    @Value("${jwt.refresh-validity-term}")
-    private Long refreshValidityTerm;
-
+    private final AuthJwtProvider jwtProvider;
+    private final AuthJwtProperties jwtProperties;
     private final AccountRepository accountRepository;
     private final RefreshTokenRepository refreshTokenRepository;
 
@@ -33,14 +34,22 @@ public class AuthService {
         RefreshToken refreshToken = refreshTokenRepository.findByAccountNickname(nickname)
                 .orElseGet(() -> RefreshToken.builder()
                         .value(UUID.randomUUID().toString())
-                        .expiredDtm(LocalDateTime.now().plusSeconds(refreshValidityTerm))
+                        .expiredDtm(LocalDateTime.now().plusSeconds(jwtProperties.getRefreshValidityTerm()))
                         .account(account)
                         .build());
         RefreshToken createdRefreshToken = refreshTokenRepository.save(refreshToken);
         return createdRefreshToken.getValue();
     }
 
-    public void validateRefreshToken(String nickname, String refreshToken) {
+    public String regenerateAccessToken(String expiredAccessToken, String refreshToken) {
+        AuthJwt jwt = jwtProvider.decodeExpiredJwt(expiredAccessToken);
+        validateRefreshToken(jwt.getSubject(), refreshToken);
+
+        AuthJwt newJwt = jwtProvider.createJwt(jwt.getSubject(), jwt.getAuth());
+        return newJwt.encode();
+    }
+
+    private void validateRefreshToken(String nickname, String refreshToken) {
         RefreshToken savedRefreshToken = refreshTokenRepository.findByAccountNickname(nickname)
                 .orElseThrow(() -> new CustomAuthenticationException("저장된 토큰이 존재하지 않습니다."));
         if (!savedRefreshToken.equalsValue(refreshToken)) {

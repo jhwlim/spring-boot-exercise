@@ -1,30 +1,22 @@
 package com.example.security;
 
 import io.jsonwebtoken.*;
-import io.jsonwebtoken.security.Keys;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.security.Key;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 
 @Component
+@RequiredArgsConstructor
 public class AuthJwtProvider {
 
     static final SignatureAlgorithm SIGNATURE_ALGORITHM = SignatureAlgorithm.HS512;
 
-    private final Long validityTerm;
-    private final Key key;
-
-    public AuthJwtProvider(@Value("${jwt.secret-key}") String secretKey,
-                           @Value("${jwt.validity-term}") Long validityTerm) {
-        this.validityTerm = validityTerm;
-        this.key = Keys.hmacShaKeyFor(secretKey.getBytes());
-    }
+    private final AuthJwtProperties authJwtProperties;
 
     public AuthJwt createJwt(String subject, String auth) {
-        return createJwt(subject, auth, LocalDateTime.now().plusSeconds(validityTerm));
+        return createJwt(subject, auth, LocalDateTime.now().plusSeconds(authJwtProperties.getValidityTerm()));
     }
 
     public AuthJwt decode(String encodedJwt) {
@@ -44,12 +36,11 @@ public class AuthJwtProvider {
     private Claims getClaims(String encodedJwt) {
         try {
             return Jwts.parserBuilder()
-                    .setSigningKey(key)
+                    .setSigningKey(authJwtProperties.getKey())
                     .build()
                     .parseClaimsJws(encodedJwt)
                     .getBody();
         } catch (JwtException | IllegalArgumentException e) {
-            e.printStackTrace();
             throw new CustomAuthenticationException("유효하지 않은 토큰입니다.");
         }
     }
@@ -60,7 +51,7 @@ public class AuthJwtProvider {
                 .subject(subject)
                 .auth(auth)
                 .expiredDtm(expiredDtm)
-                .key(key)
+                .key(authJwtProperties.getKey())
                 .build();
     }
 
@@ -71,7 +62,7 @@ public class AuthJwtProvider {
     private Claims getClaimsOfExpiredJwt(String encodeJwt) {
         try {
             return Jwts.parserBuilder()
-                    .setSigningKey(key)
+                    .setSigningKey(authJwtProperties.getKey())
                     .build()
                     .parseClaimsJws(encodeJwt)
                     .getBody();

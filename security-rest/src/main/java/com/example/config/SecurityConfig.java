@@ -50,8 +50,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Bean
     public CustomAuthenticationFilter authenticationFilter() throws Exception {
-        CustomAuthenticationFilter filter = new CustomAuthenticationFilter(authenticationManager(), jwtProvider, authService);
-        return filter;
+        return new CustomAuthenticationFilter(authenticationManager(), jwtProvider, authService);
     }
 
     @Bean
