@@ -1,2 +1,8 @@
 server:
   port: 8082
+
+example:
+  rabbitmq:
+    exchange: example.exchange
+    queue: example.queue
+    routing-key: example.routingkey!@#
